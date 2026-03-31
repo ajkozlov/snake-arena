@@ -76,6 +76,14 @@ button.primary:disabled { background: #555; cursor: not-allowed; }
 
 #start-btn { margin-top: 1rem; }
 
+button.secondary {
+  display: block; width: 100%; margin-top: .6rem;
+  padding: .75rem; background: transparent;
+  border: 1px solid #1a4a8a; border-radius: 8px;
+  color: #aaa; font-size: 1rem; font-weight: 600; cursor: pointer;
+}
+button.secondary:hover { border-color: #4fc3f7; color: #fff; }
+
 /* ── Game canvas ─────────────────────────────────── */
 #game-container {
   position: relative;
@@ -107,6 +115,14 @@ canvas {
   color: #fff; font-size: .9rem; font-weight: 600; cursor: pointer;
 }
 #back-btn:hover { background: #c73652; }
+
+#exit-arena-btn {
+  position: absolute; top: 8px; left: 8px;
+  padding: .3rem .8rem; background: rgba(0,0,0,.5);
+  border: 1px solid #e94560; border-radius: 6px;
+  color: #e94560; font-size: .75rem; font-weight: 600; cursor: pointer;
+}
+#exit-arena-btn:hover { background: #e94560; color: #fff; }
 
 #hud {
   position: absolute; top: 8px; right: 8px;

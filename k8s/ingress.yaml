@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: snake-arena
+  annotations:
+    # WebSocket support: keep connections open for the duration of a game
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # Sticky sessions — required if replicas > 1 (in-memory game state)
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "snake-arena-route"
+    nginx.ingress.kubernetes.io/session-cookie-samesite: "Strict"
+spec:
+  rules:
+    - host: snake-arena.com   # replace with your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: snake-arena
+                port:
+                  number: 80
+  # Uncomment to enable TLS (recommended for wss:// WebSocket connections)
+  # tls:
+  #   - hosts:
+  #       - snake-arena.example.com
+  #     secretName: snake-arena-tls

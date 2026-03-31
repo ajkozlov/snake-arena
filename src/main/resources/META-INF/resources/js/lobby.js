@@ -139,6 +139,21 @@ function addBot()         { ws?.send(JSON.stringify({type: 'add_bot'})); }
 function removeBot(botId) { ws?.send(JSON.stringify({type: 'remove_bot', botId})); }
 function startGame()      { ws?.send(JSON.stringify({type: 'start_game'})); }
 
+function exitRoom() {
+  if (ws) {
+    ws.send(JSON.stringify({type: 'leave'}));
+    ws.onclose = null;
+    ws.close();
+    ws = null;
+  }
+  roomCode = null;
+  myId = null;
+  lastRoomUpdate = null;
+  sessionStorage.removeItem('myId');
+  document.getElementById('waiting').classList.remove('visible');
+  showTab('create');
+}
+
 function showError(msg) {
   // Non-intrusive inline error (avoids alert())
   let el = document.getElementById('error-msg');

@@ -79,18 +79,22 @@ public class GameState {
 
         // 5. Head-vs-food
         float eatDist2 = (Worm.RADIUS + FOOD_RADIUS) * (Worm.RADIUS + FOOD_RADIUS);
+        int foodToSpawn = 0;
         for (Worm w : worms) {
             if (!w.alive) continue;
-            food.removeIf(f -> {
+            var it = food.iterator();
+            while (it.hasNext()) {
+                float[] f = it.next();
                 float dx = w.headX - f[0], dy = w.headY - f[1];
                 if (dx * dx + dy * dy < eatDist2) {
                     w.eat();
-                    spawnFood();
-                    return true;
+                    it.remove();
+                    foodToSpawn++;
                 }
-                return false;
-            });
+            }
         }
+        // Spawn replacements after iteration to avoid ConcurrentModificationException
+        for (int i = 0; i < foodToSpawn; i++) spawnFood();
 
         // 6. Win check
         long alive = worms.stream().filter(w -> w.alive).count();

@@ -63,16 +63,13 @@ public class Room {
         String name = names.getOrDefault(playerId, playerId);
         connections.remove(playerId);
         if (state == RoomState.PLAYING && gameState != null) {
-            // Keep in names/colors so the player can reconnect and spectate
-            gameState.worms.stream()
-                    .filter(w -> w.id.equals(playerId))
-                    .findFirst()
-                    .ifPresent(w -> w.alive = false);
+            // Keep worm alive — player may reconnect (e.g. lobby→game page transition).
+            // Worm will continue in its last direction and die naturally if no reconnect comes.
             if (playerId.equals(hostId)) {
                 hostId = connections.keySet().stream().findFirst().orElse(null);
                 LOG.infof("[%s] Host transferred to %s", code, hostId);
             }
-            LOG.infof("[%s] Player '%s' disconnected mid-game", code, name);
+            LOG.infof("[%s] Player '%s' disconnected mid-game (worm kept alive)", code, name);
         } else {
             names.remove(playerId);
             freeColor(colorMap.remove(playerId));

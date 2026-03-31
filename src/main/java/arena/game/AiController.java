@@ -16,22 +16,22 @@ public class AiController {
     }
 
     public Direction computeNextDirection(GameState state) {
-        Direction cur = worm.direction;
-        int curClear  = clearTicks(cur, worm.headX, worm.headY, state);
+        Direction cur    = worm.direction;
+        int curClear     = clearTicks(cur, worm.headX, worm.headY, state);
+        Direction towards = dirTowardsFood(state);
 
         if (curClear >= LOOKAHEAD_DANGER) {
-            // Current direction is safe — optionally steer towards food
-            Direction towards = dirTowardsFood(state);
+            // Current direction is safe — eagerly turn toward food if that direction is also safe
             if (towards != null && towards != cur && towards != cur.opposite()) {
                 int foodClear = clearTicks(towards, worm.headX, worm.headY, state);
-                if (foodClear >= curClear * 2) {
+                if (foodClear >= LOOKAHEAD_DANGER) {
                     return towards;
                 }
             }
             return cur;
         }
 
-        // Current direction is dangerous — pick the safer turn
+        // Current direction is dangerous — pick the safer turn, tie-break toward food
         Direction left  = cur.turnLeft();
         Direction right = cur.turnRight();
         int leftClear  = clearTicks(left,  worm.headX, worm.headY, state);
@@ -39,6 +39,11 @@ public class AiController {
 
         if (leftClear == 0 && rightClear == 0) {
             return RNG.nextBoolean() ? left : right; // trapped, best-effort
+        }
+        if (leftClear == rightClear) {
+            // Tie — prefer whichever side points toward food
+            if (towards == left)  return left;
+            if (towards == right) return right;
         }
         return leftClear >= rightClear ? left : right;
     }

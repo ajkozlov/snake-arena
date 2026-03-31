@@ -83,8 +83,17 @@
     btn.addEventListener('click', () => sendDir(dir));
   });
 
-  // ── Back to lobby ────────────────────────────────────────────────────────
+  // ── Back to lobby (game over screen) ─────────────────────────────────────
   document.getElementById('back-btn')?.addEventListener('click', () => {
+    ws.close();
+    location.href = '/';
+  });
+
+  // ── Exit Arena (mid-game button) ──────────────────────────────────────────
+  document.getElementById('exit-arena-btn')?.addEventListener('click', () => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({type: 'leave'}));
+    }
     ws.close();
     location.href = '/';
   });

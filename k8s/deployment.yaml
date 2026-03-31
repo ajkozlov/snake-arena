@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snake-arena
+  labels:
+    app: snake-arena
+spec:
+  # IMPORTANT: game state is in-memory. Keep replicas at 1 unless you add
+  # sticky sessions (see ingress.yaml) and a shared state store.
+  replicas: 1
+  selector:
+    matchLabels:
+      app: snake-arena
+  template:
+    metadata:
+      labels:
+        app: snake-arena
+    spec:
+      containers:
+        - name: snake-arena
+          image: snake-arena:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8085
+          env:
+            - name: QUARKUS_HTTP_PORT
+              value: "8085"
+            - name: QUARKUS_LOG_LEVEL
+              value: "INFO"
+            # Override arena.* from DEBUG (dev default) to INFO in production
+            - name: QUARKUS_LOG_CATEGORY__ARENA__LEVEL
+              value: "INFO"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8085
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8085
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 3
