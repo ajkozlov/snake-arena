@@ -15,12 +15,15 @@ import io.quarkus.websockets.next.WebSocket;
 import io.quarkus.websockets.next.WebSocketConnection;
 import io.smallrye.common.annotation.Blocking;
 import jakarta.inject.Inject;
+import org.jboss.logging.Logger;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @WebSocket(path = "/ws/{roomCode}")
 public class GameSocket {
+
+    private static final Logger LOG = Logger.getLogger(GameSocket.class);
 
     /** Per-connection state, keyed by WebSocketConnection.id() */
     private final ConcurrentHashMap<String, Room>   connToRoom     = new ConcurrentHashMap<>();
@@ -33,6 +36,7 @@ public class GameSocket {
     @OnOpen
     @Blocking
     public void onOpen(WebSocketConnection conn, @PathParam String roomCode) {
+        LOG.debugf("Connection opened: %s (room: %s)", conn.id(), roomCode);
         // Player sends a "join" message immediately after connecting
     }
 
@@ -41,7 +45,11 @@ public class GameSocket {
     public void onClose(WebSocketConnection conn) {
         Room   room     = connToRoom.remove(conn.id());
         String playerId = connToPlayerId.remove(conn.id());
-        if (room == null || playerId == null) return;
+        if (room == null || playerId == null) {
+            LOG.debugf("Connection closed (no room/player): %s", conn.id());
+            return;
+        }
+        LOG.debugf("Connection closed: %s (player: %s, room: %s)", conn.id(), playerId, room.code);
         room.removePlayer(playerId);
         registry.cleanupIfEmpty(room);
     }
@@ -68,6 +76,7 @@ public class GameSocket {
                 }
             }
         } catch (Exception e) {
+            LOG.warnf("Failed to handle message from %s: %s", conn.id(), e.getMessage());
             conn.sendTextAndAwait("{\"type\":\"error\",\"message\":\"Bad message\"}");
         }
     }
@@ -92,6 +101,7 @@ public class GameSocket {
                 conn.sendTextAndAwait(toJson(Msg.welcome(existingPlayerId, room.getColor(existingPlayerId))));
                 return;
             }
+            LOG.debugf("Reconnect failed for playerId %s in room %s — falling through to new join", existingPlayerId, roomCode);
             // Reconnect failed — fall through to normal join
         }
 

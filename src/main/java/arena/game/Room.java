@@ -5,6 +5,7 @@ import arena.model.PlayerInfo;
 import arena.model.WormDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.websockets.next.WebSocketConnection;
+import org.jboss.logging.Logger;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -17,6 +18,7 @@ public class Room {
     private static final float WORLD_H = 600f;
     private static final long TICK_MS  = 50L;
 
+    private static final Logger LOG = Logger.getLogger(Room.class);
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public final String code;
@@ -52,11 +54,13 @@ public class Room {
         names.put(playerId, name);
         colorMap.put(playerId, assignColor());
         if (hostId == null) hostId = playerId;
+        LOG.infof("[%s] Player '%s' (%s) joined (total: %d)", code, name, playerId, totalCount());
         broadcastRoomUpdate();
         return true;
     }
 
     public synchronized void removePlayer(String playerId) {
+        String name = names.getOrDefault(playerId, playerId);
         connections.remove(playerId);
         if (state == RoomState.PLAYING && gameState != null) {
             // Keep in names/colors so the player can reconnect and spectate
@@ -66,13 +70,17 @@ public class Room {
                     .ifPresent(w -> w.alive = false);
             if (playerId.equals(hostId)) {
                 hostId = connections.keySet().stream().findFirst().orElse(null);
+                LOG.infof("[%s] Host transferred to %s", code, hostId);
             }
+            LOG.infof("[%s] Player '%s' disconnected mid-game", code, name);
         } else {
             names.remove(playerId);
             freeColor(colorMap.remove(playerId));
             if (playerId.equals(hostId)) {
                 hostId = connections.keySet().stream().findFirst().orElse(null);
+                LOG.infof("[%s] Host transferred to %s", code, hostId);
             }
+            LOG.infof("[%s] Player '%s' left lobby (total: %d)", code, name, totalCount());
         }
         broadcastRoomUpdate();
     }
@@ -81,11 +89,15 @@ public class Room {
     public synchronized boolean reconnectPlayer(String playerId, WebSocketConnection conn) {
         if (!names.containsKey(playerId) || botIds.contains(playerId)) return false;
         connections.put(playerId, conn);
+        String name = names.get(playerId);
         if (state == RoomState.PLAYING && gameState != null) {
+            LOG.infof("[%s] Player '%s' reconnected mid-game", code, name);
             // Re-send game context so the client can render the ongoing game
             Map<String, String> colors = new LinkedHashMap<>(colorMap);
             send(conn, toJson(Msg.gameStart(WORLD_W, WORLD_H, colors)));
             send(conn, toJson(buildStateUpdate()));
+        } else {
+            LOG.infof("[%s] Player '%s' reconnected to lobby", code, name);
         }
         broadcastRoomUpdate();
         return true;
@@ -98,14 +110,16 @@ public class Room {
         botIds.add(botId);
         names.put(botId, botName);
         colorMap.put(botId, assignColor());
+        LOG.infof("[%s] Bot '%s' added (total: %d)", code, botName, totalCount());
         broadcastRoomUpdate();
         return botId;
     }
 
     public synchronized boolean removeBot(String botId) {
         if (!botIds.remove(botId)) return false;
-        names.remove(botId);
+        String botName = names.remove(botId);
         freeColor(colorMap.remove(botId));
+        LOG.infof("[%s] Bot '%s' removed (total: %d)", code, botName, totalCount());
         broadcastRoomUpdate();
         return true;
     }
@@ -121,8 +135,12 @@ public class Room {
     // ── Game lifecycle ─────────────────────────────────────────────────────────
 
     public synchronized void startCountdown() {
-        if (state != RoomState.LOBBY || totalCount() < 2) return;
+        // Allow start with 1 human + ≥1 bot, or ≥2 humans (with or without bots)
+        boolean canStart = (connections.size() >= 2) ||
+                           (connections.size() == 1 && !botIds.isEmpty());
+        if (state != RoomState.LOBBY || !canStart) return;
         state = RoomState.COUNTDOWN;
+        LOG.infof("[%s] Countdown started (%d players)", code, totalCount());
         scheduler.schedule(() -> sendCountdown(3), 0, TimeUnit.MILLISECONDS);
     }
 
@@ -145,6 +163,7 @@ public class Room {
         Map<String, String> colors = new LinkedHashMap<>(colorMap);
         broadcast(toJson(Msg.gameStart(WORLD_W, WORLD_H, colors)));
 
+        LOG.infof("[%s] Game started with %d worms", code, worms.size());
         tickFuture = scheduler.scheduleAtFixedRate(this::tick, TICK_MS, TICK_MS, TimeUnit.MILLISECONDS);
     }
 
@@ -169,6 +188,12 @@ public class Room {
                 .sorted(Comparator.comparingInt((Worm w) -> w.score).reversed())
                 .map(w -> new Msg.ScoreEntry(w.id, w.name, w.score))
                 .toList();
+        if (winnerName != null) {
+            LOG.infof("[%s] Game over — winner: '%s' (scores: %s)", code, winnerName,
+                    scores.stream().map(s -> s.name() + "=" + s.score()).toList());
+        } else {
+            LOG.infof("[%s] Game over — draw (no survivors)", code);
+        }
         broadcast(toJson(Msg.gameOver(winnerId, winnerName, scores)));
     }
 

@@ -1,11 +1,15 @@
 package arena.game;
 
+import org.jboss.logging.Logger;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 
 public class GameState {
+
+    private static final Logger LOG = Logger.getLogger(GameState.class);
 
     public static final float FOOD_RADIUS = 10f;
     public static final int   FOOD_COUNT  = 3;
@@ -49,6 +53,7 @@ public class GameState {
             if (w.headX - r < 0 || w.headX + r > worldW ||
                 w.headY - r < 0 || w.headY + r > worldH) {
                 w.alive = false;
+                LOG.debugf("Worm '%s' died: hit wall at (%.1f, %.1f)", w.name, w.headX, w.headY);
             }
         }
 
@@ -65,6 +70,7 @@ public class GameState {
                     float dx = w.headX - seg[0], dy = w.headY - seg[1];
                     if (dx * dx + dy * dy < diam2) {
                         w.alive = false;
+                        LOG.debugf("Worm '%s' died: collided with body of '%s'", w.name, other.name);
                         break;
                     }
                 }

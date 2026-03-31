@@ -9,7 +9,7 @@ public class AiController {
     private static final int LOOKAHEAD_CLEAR  = 15;
     private static final Random RNG = new Random();
 
-    private final Worm worm;
+    final Worm worm;
 
     public AiController(Worm worm) {
         this.worm = worm;

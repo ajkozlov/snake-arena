@@ -3,6 +3,7 @@
 let ws = null;
 let myId = null;
 let roomCode = null;
+let lastRoomUpdate = null; // cached so we can re-render after welcome sets myId
 
 // Show create panel on load
 document.addEventListener('DOMContentLoaded', () => showTab('create'));
@@ -76,9 +77,12 @@ function connectWs(code, name) {
 function handleWelcome(msg) {
   myId = msg.playerId;
   sessionStorage.setItem('myId', myId);
+  // room_update arrived before welcome so myId was null — re-render now
+  if (lastRoomUpdate) handleRoomUpdate(lastRoomUpdate);
 }
 
 function handleRoomUpdate(msg) {
+  lastRoomUpdate = msg;
   const players = msg.players;
 
   // Show waiting room
@@ -108,7 +112,10 @@ function handleRoomUpdate(msg) {
   const botControls = document.getElementById('bot-controls');
   startBtn.style.display    = isHost ? 'block' : 'none';
   botControls.style.display = isHost ? 'flex'  : 'none';
-  startBtn.disabled = players.length < 2;
+  const humans = players.filter(p => !p.isBot).length;
+  const bots   = players.filter(p =>  p.isBot).length;
+  // Need ≥2 humans, OR exactly 1 human with at least 1 bot
+  startBtn.disabled = !(humans >= 2 || (humans === 1 && bots >= 1));
   document.getElementById('add-bot-btn').disabled = players.length >= 4;
 }
 
