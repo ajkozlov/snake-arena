@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snake Arena</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="card">
+    <h1>🐍 Snake Arena</h1>
+
+    <div class="tabs">
+      <button class="tab active" id="tab-create" onclick="showTab('create')">Create Room</button>
+      <button class="tab"        id="tab-join"   onclick="showTab('join')">Join Room</button>
+    </div>
+
+    <div id="panel-create" class="visible">
+      <label for="name-create">Your Name</label>
+      <input type="text" id="name-create" placeholder="Enter name" maxlength="20" />
+      <button class="primary" onclick="createRoom()">Create Room</button>
+    </div>
+
+    <div id="panel-join">
+      <label for="name-join">Your Name</label>
+      <input type="text" id="name-join" placeholder="Enter name" maxlength="20" />
+      <label for="code-input">Room Code</label>
+      <input type="text" id="code-input" placeholder="XXXX" maxlength="4"
+             style="text-transform:uppercase;letter-spacing:.3rem;font-size:1.3rem;" />
+      <button class="primary" onclick="joinRoom()">Join Room</button>
+    </div>
+
+    <div id="waiting">
+      <div id="room-code-display" class="room-code"></div>
+      <ul id="player-list" class="player-list"></ul>
+      <div class="bot-controls" id="bot-controls" style="display:none;">
+        <button class="btn-sm" id="add-bot-btn" onclick="addBot()">＋ Add Bot</button>
+      </div>
+      <button class="primary" id="start-btn" style="display:none;" onclick="startGame()" disabled>
+        Start Game
+      </button>
+    </div>
+  </div>
+
+  <!-- showTab('create') called via DOMContentLoaded inside lobby.js -->
+  <script src="/js/lobby.js"></script>
+</body>
+</html>

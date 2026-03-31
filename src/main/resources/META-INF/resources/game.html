@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snake Arena</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="canvas" width="800" height="600"></canvas>
+
+    <div id="overlay">
+      <span id="overlay-title"></span>
+      <span class="sub" id="overlay-sub"></span>
+      <ul class="scores" id="overlay-scores"></ul>
+      <button id="back-btn">Back to Lobby</button>
+    </div>
+
+    <div id="hud"></div>
+
+    <div id="dpad">
+      <button class="dpad-btn" id="btn-u">&#9650;</button>
+      <button class="dpad-btn" id="btn-l">&#9664;</button>
+      <button class="dpad-btn" id="btn-r">&#9654;</button>
+      <button class="dpad-btn" id="btn-d">&#9660;</button>
+    </div>
+  </div>
+
+  <script src="/js/renderer.js"></script>
+  <script src="/js/game.js"></script>
+</body>
+</html>
